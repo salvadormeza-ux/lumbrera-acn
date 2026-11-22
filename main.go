@@ -88,7 +88,7 @@ func correrLumbrera(navegador bool) {
 	if responde(url, "lumbrera") {
 		// ya está corriendo: solo abrir la consola
 		if navegador {
-			abrirURL(url + "/")
+			abrirVentana(url+"/", filepath.Join("lumbrera", "perfil-consola"))
 		}
 		return
 	}
@@ -109,7 +109,7 @@ func correrLumbrera(navegador bool) {
 			}
 			time.Sleep(700 * time.Millisecond)
 		}
-		abrirURL(url + "/")
+		abrirVentana(url+"/", filepath.Join("lumbrera", "perfil-consola"))
 	}
 	err = <-errc
 	logf("servidor detenido: %v", err)
@@ -126,7 +126,7 @@ func correrAtalaya(navegador bool) {
 	url := fmt.Sprintf("http://localhost:%d", t.cfg.Puerto)
 	if responde(url, "atalaya") {
 		if navegador {
-			abrirURL(url + "/")
+			abrirVentana(url+"/", filepath.Join("atalaya", "perfil-panel"))
 		}
 		return
 	}
@@ -141,7 +141,7 @@ func correrAtalaya(navegador bool) {
 		}
 	}
 	if navegador {
-		abrirURL(url + "/")
+		abrirVentana(url+"/", filepath.Join("atalaya", "perfil-panel"))
 	}
 	err = <-errc
 	logf("Atalaya detenida: %v", err)

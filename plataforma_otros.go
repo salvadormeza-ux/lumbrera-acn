@@ -31,3 +31,4 @@ func instalar(exe string) {
 		fmt.Println(err)
 	}
 }
+func abrirVentana(u, perfil string) { abrirURL(u) }

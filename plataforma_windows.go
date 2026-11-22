@@ -58,6 +58,21 @@ func abrirURL(u string) {
 	exec.Command("rundll32", "url.dll,FileProtocolHandler", u).Start()
 }
 
+// abrirVentana abre una dirección como ventana de programa (sin pestañas ni barra),
+// usando Edge o Chrome en modo aplicación con un perfil propio.
+func abrirVentana(u, perfil string) {
+	nav := buscarNavegador("")
+	if nav == "" {
+		abrirURL(u)
+		return
+	}
+	args := []string{"--app=" + u, "--user-data-dir=" + filepath.Join(baseDir, perfil), "--no-first-run",
+		"--no-default-browser-check", "--disable-features=Translate,msEdgeTranslate", "--start-maximized"}
+	if err := exec.Command(nav, args...).Start(); err != nil {
+		abrirURL(u)
+	}
+}
+
 // ---------- pantallas ----------
 
 type Pantalla struct {

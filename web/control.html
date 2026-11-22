@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1626">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Lumbrera · Control</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/icono.png">
+<link rel="apple-touch-icon" href="/static/icono.png">
+<style>
+  body{font-size:15px;-webkit-tap-highlight-color:transparent}
+  .c{display:flex;flex-direction:column;min-height:100%;padding:10px 12px calc(12px + env(safe-area-inset-bottom));gap:10px;max-width:640px;margin:0 auto}
+  .cab{display:flex;align-items:center;gap:10px}
+  .cab img{width:34px;height:34px;border-radius:9px;background:#fff;padding:2px;object-fit:contain}
+  .vivo{background:#000;border:2px solid var(--vivo);border-radius:12px;padding:12px 14px;min-height:120px;white-space:pre-line;font-size:17px;line-height:1.35;position:relative}
+  .vivo .etq{position:absolute;top:-10px;left:10px;background:var(--vivo);color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px;letter-spacing:.6px}
+  .vivo .ref{display:block;color:var(--suave);font-size:12.5px;margin-top:6px}
+  .sig{color:var(--suave);font-size:13.5px;white-space:pre-line;max-height:60px;overflow:hidden}
+  .navs{display:grid;grid-template-columns:1fr 1.6fr;gap:10px}
+  .navs .btn{padding:22px 10px;font-size:22px;font-weight:700;border-radius:14px}
+  .modos4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .modos4 .btn{padding:12px 4px;font-size:13.5px;border-radius:10px}
+  .tabs{display:flex;gap:6px}
+  .tabs button{flex:1}
+  .tabs .sel{background:var(--panel2);border-color:var(--celeste2)}
+  .lam{padding:10px 12px;border:1px solid var(--borde);border-radius:10px;background:#0c1c2f;white-space:pre-line;font-size:14px;line-height:1.3;cursor:pointer}
+  .lam.on{border-color:var(--vivo);box-shadow:0 0 0 2px rgba(255,77,94,.3)}
+  .lam small{color:var(--celeste);font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;display:block}
+  .listac{display:flex;flex-direction:column;gap:6px}
+</style>
+</head>
+<body>
+<div class="c">
+  <div class="cab">
+    <img src="/static/logo-ifa.png" alt="">
+    <div class="crece"><b>Control remoto</b><div class="suave pequeno" id="titulo">—</div></div>
+    <span class="pill" id="con"><span class="punto"></span></span>
+  </div>
+
+  <div class="vivo"><span class="etq" id="modo">EN VIVO</span><span id="texto"></span><span class="ref" id="ref"></span></div>
+  <div class="sig" id="sig"></div>
+
+  <div class="navs">
+    <button class="btn" id="ant">◀</button>
+    <button class="btn pri" id="sigB">▶</button>
+  </div>
+  <div class="modos4">
+    <button class="btn" data-modo="negro">Negro</button>
+    <button class="btn" data-modo="limpio">Limpiar</button>
+    <button class="btn" data-modo="logo">Logo</button>
+    <button class="btn" data-modo="texto">Mostrar</button>
+  </div>
+
+  <div class="tabs">
+    <button class="btn sel" data-t="laminas">Láminas</button>
+    <button class="btn" data-t="canciones">Canciones</button>
+    <button class="btn" data-t="biblia">Biblia</button>
+  </div>
+
+  <div data-p="laminas" class="listac" id="laminas"></div>
+
+  <div data-p="canciones" class="oculto">
+    <input type="text" id="qC" placeholder="Buscar canción…">
+    <div class="listac" id="resC" style="margin-top:8px"></div>
+  </div>
+
+  <div data-p="biblia" class="oculto">
+    <div class="fila"><input type="text" id="qB" class="crece" placeholder="Ej: Juan 3:16"><button class="btn pri" id="irB">Ir</button></div>
+    <p class="ayuda">Proyecta el versículo y luego avanza con ▶.</p>
+  </div>
+  <p class="firma" style="text-align:center;margin-top:auto">Lumbrera · Informática DLA SpA · <a href="/">Consola completa</a></p>
+</div>
+<script src="/static/vivo.js"></script>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+function toast(msg, error) {
+  let t = $('.toast'); if (!t) { t = document.createElement('div'); document.body.appendChild(t); }
+  t.className = 'toast' + (error ? ' error' : ''); t.textContent = msg;
+  clearTimeout(window._t); window._t = setTimeout(() => t.remove(), 2500);
+}
+async function api(m, u, b) {
+  const r = await fetch(u, { method: m, headers: b ? { 'Content-Type': 'application/json' } : {}, body: b ? JSON.stringify(b) : undefined });
+  if (r.status === 401) { location.reload(); throw new Error('Sesión expirada'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'Error');
+  return j;
+}
+const vibrar = () => navigator.vibrate && navigator.vibrate(15);
+const nav = d => { vibrar(); api('POST', '/api/navegar', { delta: d }).catch(e => toast(e.message, true)); };
+$('#ant').onclick = () => nav(-1);
+$('#sigB').onclick = () => nav(1);
+$$('[data-modo]').forEach(b => b.onclick = () => { vibrar(); api('POST', '/api/modo', { modo: b.dataset.modo }); });
+$$('[data-t]').forEach(b => b.onclick = () => {
+  $$('[data-t]').forEach(x => x.classList.toggle('sel', x === b));
+  $$('[data-p]').forEach(p => p.classList.toggle('oculto', p.dataset.p !== b.dataset.t));
+});
+
+let ultLam = '';
+function render(e) {
+  const l = e.actual || {};
+  $('#texto').textContent = l.texto || '—';
+  $('#ref').textContent = [l.etiqueta, l.ref].filter(Boolean).join(' · ');
+  $('#sig').textContent = e.siguiente ? 'Siguiente: ' + e.siguiente.texto : '';
+  $('#titulo').textContent = e.titulo || e.iglesia || '';
+  $('#modo').textContent = { texto: 'EN VIVO', negro: 'NEGRO', limpio: 'SOLO FONDO', logo: 'LOGO' }[e.modo] || '';
+  $$('[data-modo]').forEach(b => b.classList.toggle('activo', b.dataset.modo === e.modo && e.modo !== 'texto'));
+  const lam = e.laminas || [];
+  const k = e.conjunto_id + ':' + lam.length;
+  if (k !== ultLam) {
+    ultLam = k;
+    $('#laminas').innerHTML = lam.length ? '' : '<p class="suave pequeno">Cuando se proyecte una canción o pasaje, sus láminas aparecen aquí.</p>';
+    lam.forEach((x, i) => {
+      const d = document.createElement('div');
+      d.className = 'lam'; d.dataset.i = i;
+      d.innerHTML = (x.etiqueta ? `<small>${escaparHTML(x.etiqueta)}</small>` : '') + escaparHTML(x.texto);
+      d.onclick = () => { vibrar(); api('POST', '/api/navegar', { indice: i }); };
+      $('#laminas').appendChild(d);
+    });
+  }
+  $$('#laminas .lam').forEach(d => d.classList.toggle('on', Number(d.dataset.i) === e.indice));
+}
+Vivo.conectar(render, ok => { $('#con .punto').className = 'punto ' + (ok ? 'ok' : 'mal'); });
+
+// canciones
+let tq;
+async function buscarC() {
+  const res = await api('GET', '/api/canciones?q=' + encodeURIComponent($('#qC').value));
+  $('#resC').innerHTML = '';
+  res.slice(0, 40).forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'lam';
+    d.innerHTML = `<b>${escaparHTML(c.titulo)}</b><br><span class="suave pequeno">${escaparHTML(c.inicio)}</span>`;
+    d.onclick = async () => {
+      const s = await api('GET', '/api/canciones/' + encodeURIComponent(c.id));
+      await api('POST', '/api/mostrar', { tipo: 'cancion', titulo: s.titulo, conjunto_id: 'm' + Date.now(), indice: 0, laminas: s.laminas });
+      $$('[data-t]')[0].click(); toast('Proyectando «' + s.titulo + '»');
+    };
+    $('#resC').appendChild(d);
+  });
+}
+$('#qC').oninput = () => { clearTimeout(tq); tq = setTimeout(buscarC, 200); };
+
+// biblia
+async function irBiblia() {
+  const q = $('#qB').value.trim(); if (!q) return;
+  try {
+    const bs = await api('GET', '/api/biblias');
+    const info = await api('GET', '/api/info');
+    const sig = bs.some(b => b.sigla === info.biblia_predeterminada) ? info.biblia_predeterminada : (bs[0] || {}).sigla;
+    const r = await api('GET', `/api/capitulo?biblia=${encodeURIComponent(sig)}&ref=${encodeURIComponent(q)}`);
+    const laminas = [];
+    let idx = 0;
+    r.versiculos.forEach((v, i) => {
+      if (!v) return;
+      if (r.desde && i + 1 === r.desde) idx = laminas.length;
+      laminas.push({ texto: v, ref: `${r.nombre} ${r.capitulo}:${i + 1} (${r.sigla})` });
+    });
+    await api('POST', '/api/mostrar', { tipo: 'biblia', titulo: `${r.nombre} ${r.capitulo}`, conjunto_id: 'm' + Date.now(), indice: idx, laminas });
+    $('#qB').blur(); $$('[data-t]')[0].click();
+  } catch (e) { toast(e.message, true); }
+}
+$('#irB').onclick = irBiblia;
+$('#qB').onkeydown = e => { if (e.key === 'Enter') irBiblia(); };
+buscarC();
+</script>
+</body>
+</html>

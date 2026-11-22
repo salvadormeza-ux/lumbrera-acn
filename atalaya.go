@@ -412,6 +412,7 @@ func (t *Atalaya) rutas() http.Handler {
 		}
 		return "■ Culto terminado", nil
 	}))
+	t.rutasDestinos(mux, auth)
 	return cabecerasSeguras(mux)
 }
 

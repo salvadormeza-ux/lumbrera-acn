@@ -42,14 +42,18 @@ type Lamina struct {
 }
 
 type Estado struct {
-	Rev         int64   `json:"rev"`
-	Ahora       int64   `json:"ahora"` // ms del servidor, para sincronizar relojes
-	Modo        string  `json:"modo"`  // texto | negro | limpio | logo
-	Tipo        string  `json:"tipo"`  // cancion | biblia | texto
-	Actual      *Lamina `json:"actual"`
-	Siguiente   *Lamina `json:"siguiente"`
-	Aviso       string  `json:"aviso"`
-	AvisoActivo bool    `json:"aviso_activo"`
+	Rev         int64    `json:"rev"`
+	Ahora       int64    `json:"ahora"` // ms del servidor, para sincronizar relojes
+	Modo        string   `json:"modo"`  // texto | negro | limpio | logo
+	Tipo        string   `json:"tipo"`  // cancion | biblia | texto
+	Actual      *Lamina  `json:"actual"`
+	Siguiente   *Lamina  `json:"siguiente"`
+	Laminas     []Lamina `json:"laminas"` // conjunto en pantalla (canción, capítulo, texto)
+	Indice      int      `json:"indice"`
+	ConjuntoID  string   `json:"conjunto_id"`
+	Titulo      string   `json:"titulo"`
+	Aviso       string   `json:"aviso"`
+	AvisoActivo bool     `json:"aviso_activo"`
 	Cuenta      struct {
 		Activa bool   `json:"activa"`
 		Fin    int64  `json:"fin"`
@@ -134,6 +138,25 @@ func asegurarBibliaIncluida(dir string) {
 	}
 	os.MkdirAll(dir, 0o755)
 	os.WriteFile(p, bibliaIncluida, 0o644)
+}
+
+// irA fija la lámina actual dentro del conjunto (requiere a.mu).
+func (a *App) irA(i int) {
+	e := &a.estado
+	if i < 0 {
+		i = 0
+	}
+	if i >= len(e.Laminas) {
+		i = len(e.Laminas) - 1
+	}
+	e.Indice = i
+	act := e.Laminas[i]
+	e.Actual = &act
+	e.Siguiente = nil
+	if i+1 < len(e.Laminas) {
+		sig := e.Laminas[i+1]
+		e.Siguiente = &sig
+	}
 }
 
 func (a *App) emitir() {
@@ -270,6 +293,13 @@ func (a *App) rutas() http.Handler {
 		}
 		pagina("consola.html")(w, r)
 	})
+	mux.HandleFunc("GET /control", func(w http.ResponseWriter, r *http.Request) {
+		if !a.autenticado(r) {
+			pagina("ingreso.html")(w, r)
+			return
+		}
+		pagina("control.html")(w, r)
+	})
 	mux.HandleFunc("GET /proyector", pagina("proyector.html"))
 	mux.HandleFunc("GET /escenario", pagina("escenario.html"))
 	mux.HandleFunc("GET /obs", pagina("obs.html"))
@@ -304,21 +334,64 @@ func (a *App) rutas() http.Handler {
 	// --- control en vivo ---
 	mux.HandleFunc("POST /api/mostrar", a.conAuth(func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
-			Tipo      string  `json:"tipo"`
-			Actual    *Lamina `json:"actual"`
-			Siguiente *Lamina `json:"siguiente"`
+			Tipo       string   `json:"tipo"`
+			Actual     *Lamina  `json:"actual"`
+			Siguiente  *Lamina  `json:"siguiente"`
+			Laminas    []Lamina `json:"laminas"`
+			Indice     int      `json:"indice"`
+			ConjuntoID string   `json:"conjunto_id"`
+			Titulo     string   `json:"titulo"`
 		}
-		if err := leerCuerpo(r, &req); err != nil || req.Actual == nil {
+		if err := leerCuerpo(r, &req); err != nil || (req.Actual == nil && len(req.Laminas) == 0) {
 			jsonError(w, 400, "datos inválidos")
 			return
 		}
 		a.mu.Lock()
-		a.estado.Tipo, a.estado.Actual, a.estado.Siguiente = req.Tipo, req.Actual, req.Siguiente
-		if a.estado.Modo != "negro" {
-			a.estado.Modo = "texto"
+		e := &a.estado
+		e.Tipo, e.Titulo, e.ConjuntoID = req.Tipo, req.Titulo, req.ConjuntoID
+		if len(req.Laminas) > 0 {
+			if len(req.Laminas) > 400 {
+				req.Laminas = req.Laminas[:400]
+			}
+			e.Laminas = req.Laminas
+			a.irA(req.Indice)
+		} else {
+			e.Laminas, e.Indice = nil, 0
+			e.Actual, e.Siguiente = req.Actual, req.Siguiente
+		}
+		if e.Modo != "negro" {
+			e.Modo = "texto"
 		}
 		a.emitir()
 		a.mu.Unlock()
+		jsonOK(w, map[string]bool{"ok": true})
+	}))
+	mux.HandleFunc("POST /api/navegar", a.conAuth(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Delta  int  `json:"delta"`
+			Indice *int `json:"indice"`
+		}
+		leerCuerpo(r, &req)
+		a.mu.Lock()
+		defer a.mu.Unlock()
+		e := &a.estado
+		if len(e.Laminas) == 0 {
+			jsonError(w, 409, "No hay nada proyectado para avanzar")
+			return
+		}
+		i := e.Indice + req.Delta
+		if req.Indice != nil {
+			i = *req.Indice
+		}
+		if i < 0 || i >= len(e.Laminas) {
+			jsonOK(w, map[string]any{"ok": true, "fin": true})
+			return
+		}
+		a.irA(i)
+		if e.Modo != "negro" {
+			e.Modo = "texto"
+		}
+		a.emitir()
 		jsonOK(w, map[string]bool{"ok": true})
 	}))
 	mux.HandleFunc("POST /api/modo", a.conAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -801,8 +874,8 @@ func adivinarSigla(s string) string {
 }
 
 func (a *App) importarCancionesHTTP(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
-	if err := r.ParseMultipartForm(16 << 20); err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, 100<<20)
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
 		jsonError(w, 400, "archivos inválidos")
 		return
 	}
@@ -813,16 +886,17 @@ func (a *App) importarCancionesHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			continue
 		}
-		b, _ := io.ReadAll(io.LimitReader(f, 2<<20))
+		b, _ := io.ReadAll(io.LimitReader(f, 40<<20))
 		f.Close()
-		texto := decodificarTexto(b)
-		titulo := strings.TrimSuffix(filepath.Base(fh.Filename), filepath.Ext(fh.Filename))
-		c := cancionDesdeTexto(titulo, texto)
-		if _, err := a.canciones.guardar(c); err != nil {
-			errores = append(errores, fh.Filename+": "+err.Error())
-			continue
+		cs, errs := cancionesDesdeArchivo(fh.Filename, b)
+		errores = append(errores, errs...)
+		for _, c := range cs {
+			if _, err := a.canciones.guardar(c); err != nil {
+				errores = append(errores, c.Titulo+": "+err.Error())
+				continue
+			}
+			n++
 		}
-		n++
 	}
 	jsonOK(w, map[string]any{"importadas": n, "errores": errores})
 }

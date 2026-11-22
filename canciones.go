@@ -118,6 +118,16 @@ func (c *Cancionero) guardar(x Cancion) (*Cancion, error) {
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if x.ID == "" {
+		// misma canción (mismo título) importada otra vez: se actualiza en lugar de duplicarse
+		t := sinAcentos(x.Titulo)
+		for id, y := range c.todo {
+			if sinAcentos(y.Titulo) == t {
+				x.ID = id
+				break
+			}
+		}
+	}
 	if x.ID == "" || c.todo[x.ID] == nil {
 		x.ID = nombreArchivoSeguro(sinAcentos(x.Titulo))
 		if len(x.ID) > 50 {

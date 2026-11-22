@@ -1,6 +1,17 @@
 LUMBRERA — Registro de versiones
 Informática DLA SpA
 
+2.1.0 — 22-11-2026
+ - Consola y panel de Atalaya se abren en su propia ventana de programa (sin pestañas ni barra
+   del navegador), con perfil separado.
+ - Control remoto para el celular: http://IP-DEL-PC:8092/control — botones grandes ◀ ▶,
+   Negro/Limpiar/Logo/Mostrar, láminas tocables, buscar canciones y citas bíblicas.
+ - El avance de láminas ahora lo lleva el programa: consola y celular quedan sincronizados.
+ - Importar canciones: varios .txt a la vez, OpenLyrics .xml y .zip (por ejemplo, lo exportado
+   desde Holyrics). Si la canción ya existe por título, se actualiza en vez de duplicarse.
+ - Atalaya: destino de la transmisión (YouTube, Facebook, Restream para varias redes a la vez o
+   servidor personalizado). Las claves quedan solo en este PC y se aplican a OBS con un clic.
+
 2.0.1 — 22-11-2026
  - Logos de la Iglesia Familia Apostólica / La Senda Antigua incluidos: pantalla «Logo» (F10)
    del proyector, ingreso, consola y panel de Atalaya.

@@ -50,19 +50,43 @@ $$('#nav button').forEach(b => b.onclick = () => irPestana(b.dataset.tab));
 let vivo = null;                  // conjunto que está en pantalla
 const conj = { cancion: null, biblia: null, texto: null };
 
+let ultimoMostrar = 0, enviando = 0;
+// si otro equipo (p. ej. el celular) proyectó otra cosa, la consola deja de considerar suyo el conjunto
+function sincronizarVivo(e) {
+  if (!vivo || enviando || !e || Date.now() - ultimoMostrar < 700) return;
+  if (e.conjunto_id === vivo.uid) {
+    if (vivo.indice !== e.indice) { vivo.indice = e.indice; pintarVivos(); }
+  } else if (e.conjunto_id) { vivo = null; pintarVivos(); }
+}
+const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
 async function mostrar(c, i) {
   if (!c || !c.laminas.length) return;
   i = Math.max(0, Math.min(c.laminas.length - 1, i));
+  if (!c.uid) c.uid = nuevoId();
   c.indice = i;
   vivo = c;
+  ultimoMostrar = Date.now();
   pintarVivos();
+  enviando++;
   try {
-    await post('/api/mostrar', { tipo: c.tipo, actual: c.laminas[i], siguiente: c.laminas[i + 1] || null });
+    if (Vivo.estado && Vivo.estado.conjunto_id === c.uid) {
+      await post('/api/navegar', { indice: i });
+    } else {
+      await post('/api/mostrar', { tipo: c.tipo, titulo: c.titulo || '', conjunto_id: c.uid, indice: i,
+        laminas: c.laminas.map(l => ({ texto: l.texto, ref: l.ref || '', etiqueta: l.etiqueta || '' })) });
+    }
   } catch (e) { toast(e.message, true); }
+  finally { enviando--; }
 }
 
 async function navegar(d) {
+  sincronizarVivo(Vivo.estado);
   let c = vivo;
+  if (!c && Vivo.estado && Vivo.estado.laminas && Vivo.estado.laminas.length) {
+    // algo proyectado desde otro equipo (p. ej. el celular): avanzar en el servidor
+    return post('/api/navegar', { delta: d }).catch(e => toast(e.message, true));
+  }
   if (!c) {
     c = pestana === 'biblia' ? conj.biblia : pestana === 'tiempos' ? conj.texto : conj.cancion;
     if (!c) return;
@@ -136,6 +160,7 @@ addEventListener('keydown', e => {
 
 // ---------- estado en vivo ----------
 function renderEstado(e) {
+  sincronizarVivo(e);
   $$('#modos [data-modo]').forEach(b => b.classList.toggle('activo', b.dataset.modo === e.modo && e.modo !== 'texto'));
   $('#modoActual').textContent = { texto: '● En pantalla', negro: '■ Negro', limpio: '○ Solo fondo', logo: '✦ Logo' }[e.modo] || e.modo;
   $('#modoActual').style.borderColor = e.modo === 'texto' ? 'var(--vivo)' : 'var(--borde)';
@@ -240,7 +265,7 @@ $('#archivosTxt').onchange = async e => {
   e.target.value = '';
   try {
     const r = await post('/api/canciones/importar', fd);
-    toast(`${r.importadas} canción(es) importada(s)` + (r.errores && r.errores.length ? ' · ' + r.errores.length + ' con error' : ''), r.errores && r.errores.length);
+    toast(`${r.importadas} canción(es) importada(s) o actualizada(s)` + (r.errores && r.errores.length ? ' · ' + r.errores.length + ' con error' : ''), r.errores && r.errores.length);
     buscarCanciones();
   } catch (err) { toast(err.message, true); }
 };
@@ -478,7 +503,7 @@ async function cargarAjustes() {
   const ips = info.ips.length ? info.ips : ['IP-DEL-PC'];
   $('#direcciones').innerHTML = 'Conecte el celular al mismo Wi-Fi y abra:<br>' +
     ips.map(ip => `<code>http://${ip}:${info.puerto}</code>`).join('<br>') +
-    `<br><br>Escenario: <code>/escenario</code> · OBS: <code>/obs</code> · Proyector: <code>/proyector</code>`;
+    `<br><br>📱 <b>Control remoto</b> (botones grandes): <code>http://${ips[0]}:${info.puerto}/control</code><br>Escenario: <code>/escenario</code> · OBS: <code>/obs</code> · Proyector: <code>/proyector</code>`;
   try {
     const ps = await get('/api/pantallas');
     $('#aPantalla').innerHTML = '<option value="0">Automática (la que no es principal)</option>' +

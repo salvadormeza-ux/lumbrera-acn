@@ -18,6 +18,10 @@
   .audio.mute{opacity:.6;border-color:#7a2e3a}
   .audios{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
   .vivoTx{color:var(--vivo)}
+  .destinos{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .dest{border:1px solid var(--borde);border-radius:10px;padding:10px 12px;background:#0c1c2f}
+  .dest.activo{border-color:var(--ok);box-shadow:0 0 0 2px rgba(61,220,151,.25)}
+  .dest input{margin-top:6px}
 </style>
 </head>
 <body>
@@ -50,6 +54,18 @@
         <div style="height:28px"></div>
         <div class="fila"><button class="btn grande crece" id="grBoton">Iniciar grabación</button></div>
       </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>📺 Destino de la transmisión</h2>
+      <div class="ayuda" id="dObs">OBS transmite a: —</div>
+      <div class="destinos" id="destinos" style="margin-top:10px"></div>
+      <details style="margin-top:10px"><summary class="suave" style="cursor:pointer">¿Dónde saco la clave de transmisión?</summary>
+        <p class="ayuda"><b>YouTube:</b> YouTube Studio → Emitir en vivo → Transmisión → «Clave de transmisión».<br>
+        <b>Facebook:</b> Página de la iglesia → Video en vivo → «Usar clave de transmisión» (marque «clave persistente» para no cambiarla cada culto).<br>
+        <b>YouTube y Facebook a la vez:</b> cree una cuenta en restream.io, conecte ahí ambos canales y pegue aquí la clave de Restream.<br>
+        Las claves quedan guardadas solo en este PC y nunca se muestran completas.</p>
+      </details>
     </div>
 
     <div class="tarjeta">
@@ -113,8 +129,10 @@ const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 let E = null, rutinaCargada = false;
 async function act(u, b, ok) { try { await post(u, b); ok && toast(ok); setTimeout(cargar, 300); } catch (e) { toast(e.message, true); } }
 
+let prevCon = null;
 function pintar(d) {
   const o = d.obs; E = o;
+  if (prevCon !== o.conectado) { prevCon = o.conectado; if (typeof cargarDestinos === 'function') cargarDestinos(); }
   $('#ver').textContent = 'v' + d.version;
   $('#pObs .punto').className = 'punto ' + (o.conectado ? 'ok' : 'mal');
   $('#pLum .punto').className = 'punto ' + (o.lumbrera_ok ? 'ok' : 'mal');
@@ -162,6 +180,32 @@ $('#rGuardar').onclick = () => act('/api/rutina', { escena_inicio: $('#rIni').va
 $('#cultoIni').onclick = () => { if (confirm('¿Iniciar el culto? Se comenzará a transmitir en vivo.')) act('/api/culto', { accion: 'iniciar' }, 'Culto iniciado'); };
 $('#cultoFin').onclick = () => { if (confirm('¿Terminar el culto y detener la transmisión?')) act('/api/culto', { accion: 'terminar' }, 'Culto terminado'); };
 cargar(); setInterval(cargar, 1500);
+// ---------- destinos ----------
+async function cargarDestinos() {
+  try {
+    const r = await fetch('/api/destinos'); if (!r.ok) return;
+    const d = await r.json();
+    $('#dObs').innerHTML = d.obs && d.obs.servidor ? 'OBS transmite a: <b>' + esc(d.obs.servidor) + '</b> ' + (d.obs.clave ? '(clave ' + esc(d.obs.clave) + ')' : '') : 'OBS transmite a: — (sin conexión con OBS)';
+    $('#destinos').innerHTML = d.destinos.map(x => `<div class="dest ${d.activo === x.id ? 'activo' : ''}">
+      <div class="fila"><b class="crece">${esc(x.nombre)}</b><span class="pequeno ${x.configurado ? '' : 'suave'}">${x.configurado ? '🔑 ' + esc(x.clave) : 'sin clave'}</span></div>
+      ${x.id === 'personalizado' ? `<input type="text" data-srv="${x.id}" placeholder="rtmp://servidor/app" value="${esc(x.servidor || '')}">` : ''}
+      <input type="password" data-clave="${x.id}" placeholder="${x.configurado ? 'Cambiar clave…' : 'Pegar clave de transmisión'}" autocomplete="off">
+      <div class="fila" style="margin-top:8px">
+        <button class="btn chico" data-guardar="${x.id}">Guardar clave</button>
+        <button class="btn chico ${d.activo === x.id ? '' : 'pri'}" data-usar="${x.id}" ${x.configurado ? '' : 'disabled style="opacity:.5"'}>${d.activo === x.id ? '✓ En uso' : 'Usar este'}</button>
+      </div></div>`).join('');
+    document.querySelectorAll('[data-guardar]').forEach(b => b.onclick = async () => {
+      const id = b.dataset.guardar, cl = document.querySelector(`[data-clave="${id}"]`).value, srv = document.querySelector(`[data-srv="${id}"]`);
+      if (!cl && !srv) return toast('Pegue la clave primero', true);
+      try { await post('/api/destinos', { id, clave: cl, servidor: srv ? srv.value : '' }); toast('Clave guardada'); cargarDestinos(); } catch (e) { toast(e.message, true); }
+    });
+    document.querySelectorAll('[data-usar]').forEach(b => b.onclick = async () => {
+      try { await post('/api/destino-aplicar', { id: b.dataset.usar }); toast('OBS transmitirá a ' + b.closest('.dest').querySelector('b').textContent); cargarDestinos(); } catch (e) { toast(e.message, true); }
+    });
+  } catch (e) { }
+}
+cargarDestinos();
+
 </script>
 </body>
 </html>
