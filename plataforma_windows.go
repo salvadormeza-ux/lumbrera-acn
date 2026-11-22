@@ -17,21 +17,21 @@ import (
 )
 
 var (
-	user32                = syscall.NewLazyDLL("user32.dll")
-	procMessageBoxW       = user32.NewProc("MessageBoxW")
-	procEnumDisplayMon    = user32.NewProc("EnumDisplayMonitors")
-	procGetMonitorInfoW   = user32.NewProc("GetMonitorInfoW")
+	user32                 = syscall.NewLazyDLL("user32.dll")
+	procMessageBoxW        = user32.NewProc("MessageBoxW")
+	procEnumDisplayMon     = user32.NewProc("EnumDisplayMonitors")
+	procGetMonitorInfoW    = user32.NewProc("GetMonitorInfoW")
 	procSetProcessDPIAware = user32.NewProc("SetProcessDPIAware")
 )
 
 const (
-	mbOK          = 0x0
-	mbYesNo       = 0x4
-	mbIconInfo    = 0x40
+	mbOK           = 0x0
+	mbYesNo        = 0x4
+	mbIconInfo     = 0x40
 	mbIconQuestion = 0x20
-	mbIconWarning = 0x30
-	mbTopmost     = 0x40000
-	idYes         = 6
+	mbIconWarning  = 0x30
+	mbTopmost      = 0x40000
+	idYes          = 6
 )
 
 func caja(titulo, texto string, flags uintptr) int {

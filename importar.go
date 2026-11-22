@@ -292,10 +292,10 @@ func importarXML(data []byte) (*acumulador, error) {
 	a := &acumulador{formato: "XML"}
 	lib, cap, secLib := 0, 0, 0
 	var verso struct {
-		activo      bool
-		lib, c, v   int
-		buf         strings.Builder
-		milestone   bool
+		activo    bool
+		lib, c, v int
+		buf       strings.Builder
+		milestone bool
 	}
 	ignorar := 0
 	enTitulo := false

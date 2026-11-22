@@ -163,6 +163,7 @@ func prepararCarpeta(base string) error {
 		escribirJSON(ca, configAtalayaPorDefecto())
 	}
 	asegurarBibliaIncluida(filepath.Join(base, "lumbrera", "datos", "biblias"))
+	asegurarLogo(filepath.Join(base, "lumbrera", "datos", "fondos"))
 	cancionesEjemplo(filepath.Join(base, "lumbrera", "datos", "canciones"))
 	os.WriteFile(filepath.Join(base, "LEEME.txt"), []byte(strings.ReplaceAll(string(leemeTxt), "\n", "\r\n")), 0o644)
 	os.WriteFile(filepath.Join(base, "CHANGELOG.txt"), []byte(strings.ReplaceAll(string(changelogTxt), "\n", "\r\n")), 0o644)

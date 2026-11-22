@@ -38,8 +38,8 @@ type Atalaya struct {
 }
 
 type AudioOBS struct {
-	Nombre  string `json:"nombre"`
-	Silencio bool  `json:"silencio"`
+	Nombre   string `json:"nombre"`
+	Silencio bool   `json:"silencio"`
 }
 
 type EstadoOBS struct {
@@ -108,7 +108,7 @@ func (t *Atalaya) bucleConexion() {
 			t.mu.Lock()
 			if err != nil {
 				msg := err.Error()
-				if strings.Contains(msg, "refused") || strings.Contains(msg, "rechaz") && !strings.Contains(msg, "contraseña") || strings.Contains(msg, "actively") {
+				if !strings.Contains(msg, "contraseña") && (strings.Contains(msg, "refused") || strings.Contains(msg, "connectex") || strings.Contains(msg, "actively") || strings.Contains(msg, "deneg")) {
 					msg = "OBS no está abierto o el servidor WebSocket no está habilitado (Herramientas → Ajustes del servidor WebSocket)"
 				}
 				if t.ultError != msg {
@@ -361,7 +361,7 @@ func (t *Atalaya) rutas() http.Handler {
 		t.mu.Unlock()
 		err := o.pedir("CreateInput", map[string]any{
 			"sceneName": esc.Actual, "inputName": "Letras Lumbrera", "inputKind": "browser_source",
-			"inputSettings": map[string]any{"url": url, "width": 1920, "height": 1080, "reroute_audio": false},
+			"inputSettings":    map[string]any{"url": url, "width": 1920, "height": 1080, "reroute_audio": false},
 			"sceneItemEnabled": true,
 		}, nil)
 		if err != nil && strings.Contains(err.Error(), "601") {

@@ -28,6 +28,11 @@ var webFS embed.FS
 //go:embed recursos/RV1909.json.gz
 var bibliaIncluida []byte
 
+//go:embed recursos/logo-iglesia.png
+var logoIglesia []byte
+
+const nombreLogoIglesia = "logo-iglesia-ACN.png"
+
 // ---------- estado en vivo ----------
 
 type Lamina struct {
@@ -51,10 +56,10 @@ type Estado struct {
 		Texto  string `json:"texto"`
 	} `json:"cuenta"`
 	Crono struct {
-		Corriendo  bool  `json:"corriendo"`
-		Inicio     int64 `json:"inicio"`
-		Acumulado  int64 `json:"acumulado"`
-		LimiteMin  int   `json:"limite_min"`
+		Corriendo bool  `json:"corriendo"`
+		Inicio    int64 `json:"inicio"`
+		Acumulado int64 `json:"acumulado"`
+		LimiteMin int   `json:"limite_min"`
 	} `json:"crono"`
 	MensajeEscenario string `json:"mensaje_escenario"`
 	Estilo           Estilo `json:"estilo"`
@@ -83,6 +88,7 @@ func nuevaApp(dir string) (*App, error) {
 		fallos:   map[string][]time.Time{},
 	}
 	a.cfg = configLumbreraPorDefecto()
+	a.cfg.VersionConfig = 0 // si el archivo no lo trae, es de una versión anterior
 	if err := leerJSON(a.cfgPath, &a.cfg); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return nil, fmt.Errorf("config.json con error: %v", err)
@@ -93,6 +99,15 @@ func nuevaApp(dir string) (*App, error) {
 		os.MkdirAll(filepath.Join(a.datos, d), 0o755)
 	}
 	asegurarBibliaIncluida(filepath.Join(a.datos, "biblias"))
+	asegurarLogo(filepath.Join(a.datos, "fondos"))
+	if a.cfg.VersionConfig < 2 {
+		// 2.0.1: el logo de la iglesia pasa a ser el predeterminado
+		if a.cfg.Estilo.Logo == "" {
+			a.cfg.Estilo.Logo = nombreLogoIglesia
+		}
+		a.cfg.VersionConfig = 2
+		escribirJSON(a.cfgPath, a.cfg)
+	}
 	a.biblias = nuevaBiblioteca(filepath.Join(a.datos, "biblias"))
 	a.canciones = nuevoCancionero(filepath.Join(a.datos, "canciones"))
 	a.estado.Modo = "limpio"
@@ -101,6 +116,15 @@ func nuevaApp(dir string) (*App, error) {
 	a.estado.Cuenta.Texto = "El culto comienza en"
 	a.estado.Crono.LimiteMin = 40
 	return a, nil
+}
+
+func asegurarLogo(dir string) {
+	p := filepath.Join(dir, nombreLogoIglesia)
+	if _, err := os.Stat(p); err == nil {
+		return
+	}
+	os.MkdirAll(dir, 0o755)
+	os.WriteFile(p, logoIglesia, 0o644)
 }
 
 func asegurarBibliaIncluida(dir string) {

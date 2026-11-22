@@ -21,9 +21,9 @@ import (
 )
 
 type wsConn struct {
-	c    net.Conn
-	r    *bufio.Reader
-	wmu  sync.Mutex
+	c   net.Conn
+	r   *bufio.Reader
+	wmu sync.Mutex
 }
 
 func wsDial(host string, port int, timeout time.Duration) (*wsConn, error) {
@@ -255,7 +255,7 @@ func (o *OBS) bucle() {
 		var m struct {
 			Op int `json:"op"`
 			D  struct {
-				RequestID     string          `json:"requestId"`
+				RequestID     string `json:"requestId"`
 				RequestStatus struct {
 					Result  bool   `json:"result"`
 					Code    int    `json:"code"`

@@ -23,10 +23,10 @@ type Cancion struct {
 }
 
 type CancionResumen struct {
-	ID      string `json:"id"`
-	Titulo  string `json:"titulo"`
-	Autor   string `json:"autor"`
-	Inicio  string `json:"inicio"`
+	ID     string `json:"id"`
+	Titulo string `json:"titulo"`
+	Autor  string `json:"autor"`
+	Inicio string `json:"inicio"`
 }
 
 type Cancionero struct {

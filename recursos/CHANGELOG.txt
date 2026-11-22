@@ -1,6 +1,12 @@
 LUMBRERA — Registro de versiones
 Informática DLA SpA
 
+2.0.1 — 22-11-2026
+ - Logos de la Iglesia Familia Apostólica / La Senda Antigua incluidos: pantalla «Logo» (F10)
+   del proyector, ingreso, consola y panel de Atalaya.
+ - Al actualizar, si no había logo elegido, queda el de la iglesia por defecto.
+ - Atalaya: mensaje claro cuando OBS no está abierto (Windows en español).
+
 2.0.0 — 22-11-2026
  - Reconstrucción completa como un solo programa nativo de Windows (sin Python): Lumbrera y Atalaya
    en el mismo instalador Instalar_Lumbrera_ACN.exe, instalación en C:\Lumbrera.

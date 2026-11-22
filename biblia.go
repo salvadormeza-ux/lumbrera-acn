@@ -26,11 +26,11 @@ type LibroData struct {
 }
 
 type LibroInfo struct {
-	Num     int      `json:"num"`
-	Nombre  string   `json:"nombre"`
-	Abrevs  []string `json:"-"`
-	Corto   string   `json:"corto"`
-	Testam  string   `json:"testamento"`
+	Num    int      `json:"num"`
+	Nombre string   `json:"nombre"`
+	Abrevs []string `json:"-"`
+	Corto  string   `json:"corto"`
+	Testam string   `json:"testamento"`
 }
 
 var libros = []LibroInfo{
@@ -169,10 +169,10 @@ func buscarLibro(s string) int {
 }
 
 type Referencia struct {
-	Libro     int `json:"libro"`
-	Capitulo  int `json:"capitulo"`
-	VerDesde  int `json:"desde"`
-	VerHasta  int `json:"hasta"`
+	Libro    int `json:"libro"`
+	Capitulo int `json:"capitulo"`
+	VerDesde int `json:"desde"`
+	VerHasta int `json:"hasta"`
 }
 
 var reRef = regexp.MustCompile(`^\s*((?:[123]|i{1,3})?\s*\.?\s*[^\d:]+?)\s*(\d+)?(?:\s*[:.,\s]\s*(\d+)(?:\s*-\s*(\d+))?)?\s*$`)
@@ -295,9 +295,9 @@ func (b *Biblioteca) obtener(sigla string) *Biblia {
 }
 
 type BibliaResumen struct {
-	Sigla     string `json:"sigla"`
-	Nombre    string `json:"nombre"`
-	Versiculos int   `json:"versiculos"`
+	Sigla      string `json:"sigla"`
+	Nombre     string `json:"nombre"`
+	Versiculos int    `json:"versiculos"`
 }
 
 func (b *Biblioteca) lista() []BibliaResumen {
@@ -318,11 +318,11 @@ func (b *Biblioteca) lista() []BibliaResumen {
 }
 
 type ResultadoBusqueda struct {
-	Libro    int    `json:"libro"`
-	Capitulo int    `json:"capitulo"`
-	Versiculo int   `json:"versiculo"`
-	Ref      string `json:"ref"`
-	Texto    string `json:"texto"`
+	Libro     int    `json:"libro"`
+	Capitulo  int    `json:"capitulo"`
+	Versiculo int    `json:"versiculo"`
+	Ref       string `json:"ref"`
+	Texto     string `json:"texto"`
 }
 
 func (bb *Biblia) buscarTexto(q string, max int) []ResultadoBusqueda {

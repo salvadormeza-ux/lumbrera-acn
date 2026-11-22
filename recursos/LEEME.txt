@@ -1,5 +1,5 @@
 LUMBRERA + ATALAYA — Iglesia ACN, Templo Central IFA
-Versión 2.0.0 · Informática DLA SpA
+Versión 2.0.1 · Informática DLA SpA
 
 INSTALAR
  1. Descargar Instalar_Lumbrera_ACN.exe en el PC del templo y ejecutarlo

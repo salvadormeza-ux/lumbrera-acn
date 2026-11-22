@@ -10,11 +10,11 @@ import (
 	"time"
 )
 
-const version = "2.0.0"
+const version = "2.0.1"
 
 var (
-	baseDir  string // C:\Lumbrera
-	logMu    sync.Mutex
+	baseDir    string // C:\Lumbrera
+	logMu      sync.Mutex
 	logArchivo *os.File
 )
 
@@ -42,31 +42,32 @@ func logf(format string, a ...any) {
 // ---------- Lumbrera ----------
 
 type Estilo struct {
-	Fuente          string `json:"fuente"`
-	TamanoMax       int    `json:"tamano_max"`  // px a 1080p
-	ColorTexto      string `json:"color_texto"`
-	ColorFondo      string `json:"color_fondo"`
-	ImagenFondo     string `json:"imagen_fondo"` // nombre de archivo en datos/fondos
-	Oscurecer       int    `json:"oscurecer"`    // 0-90 % sobre la imagen
-	Sombra          bool   `json:"sombra"`
-	Mayusculas      bool   `json:"mayusculas"`
-	MostrarRef      bool   `json:"mostrar_referencia"`
-	Alineacion      string `json:"alineacion"`
-	Logo            string `json:"logo"`
-	ColorAviso      string `json:"color_aviso"`
-	OBSTamano       int    `json:"obs_tamano"`
-	OBSFranja       bool   `json:"obs_franja"`
+	Fuente      string `json:"fuente"`
+	TamanoMax   int    `json:"tamano_max"` // px a 1080p
+	ColorTexto  string `json:"color_texto"`
+	ColorFondo  string `json:"color_fondo"`
+	ImagenFondo string `json:"imagen_fondo"` // nombre de archivo en datos/fondos
+	Oscurecer   int    `json:"oscurecer"`    // 0-90 % sobre la imagen
+	Sombra      bool   `json:"sombra"`
+	Mayusculas  bool   `json:"mayusculas"`
+	MostrarRef  bool   `json:"mostrar_referencia"`
+	Alineacion  string `json:"alineacion"`
+	Logo        string `json:"logo"`
+	ColorAviso  string `json:"color_aviso"`
+	OBSTamano   int    `json:"obs_tamano"`
+	OBSFranja   bool   `json:"obs_franja"`
 }
 
 type ConfigLumbrera struct {
-	Puerto       int    `json:"puerto"`
-	Clave        string `json:"clave"`
-	Iglesia      string `json:"iglesia"`
-	BibliaPred   string `json:"biblia_predeterminada"`
-	AbrirProyector bool `json:"abrir_proyector_al_iniciar"`
-	PantallaProyector int `json:"pantalla_proyector"` // 0 = automática (la 2ª)
-	Navegador    string `json:"navegador"` // ruta opcional a Edge/Chrome
-	Estilo       Estilo `json:"estilo"`
+	Puerto            int    `json:"puerto"`
+	Clave             string `json:"clave"`
+	Iglesia           string `json:"iglesia"`
+	BibliaPred        string `json:"biblia_predeterminada"`
+	AbrirProyector    bool   `json:"abrir_proyector_al_iniciar"`
+	PantallaProyector int    `json:"pantalla_proyector"` // 0 = automática (la 2ª)
+	Navegador         string `json:"navegador"`          // ruta opcional a Edge/Chrome
+	Estilo            Estilo `json:"estilo"`
+	VersionConfig     int    `json:"version_config"`
 }
 
 func configLumbreraPorDefecto() ConfigLumbrera {
@@ -75,7 +76,8 @@ func configLumbreraPorDefecto() ConfigLumbrera {
 		AbrirProyector: true,
 		Estilo: Estilo{Fuente: "Segoe UI", TamanoMax: 96, ColorTexto: "#ffffff", ColorFondo: "#0b1b2e",
 			Oscurecer: 45, Sombra: true, MostrarRef: true, Alineacion: "center", ColorAviso: "#9bd3ff",
-			OBSTamano: 54, OBSFranja: true},
+			OBSTamano: 54, OBSFranja: true, Logo: nombreLogoIglesia},
+		VersionConfig: 2,
 	}
 }
 

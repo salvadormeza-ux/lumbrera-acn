@@ -11,7 +11,7 @@
 <div class="ingreso">
   <form class="tarjeta" id="f">
     <div class="marca">
-      <div class="icono" id="ico">🕯️</div>
+      <div class="icono" id="ico" style="background:#fff;padding:3px"><img src="/static/logo-ifa.png" alt="Iglesia Familia Apostólica" style="width:100%;height:100%;object-fit:contain"></div>
       <div><b id="app">Lumbrera</b><span class="suave pequeno" id="sub">Proyección · Iglesia ACN</span></div>
     </div>
     <label for="clave">Clave</label>
@@ -28,7 +28,7 @@ fetch('/api/ping').then(r=>r.json()).then(p=>{
     document.title='Atalaya · Ingresar';
     document.getElementById('app').textContent='Atalaya';
     document.getElementById('sub').textContent='Transmisión (OBS) · Iglesia ACN';
-    document.getElementById('ico').textContent='📡';
+    
   } else document.title='Lumbrera · Ingresar';
 });
 document.getElementById('f').onsubmit=async e=>{
