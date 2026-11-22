@@ -1,0 +1,18 @@
+LUMBRERA — Registro de versiones
+Informática DLA SpA
+
+2.0.0 — 22-11-2026
+ - Reconstrucción completa como un solo programa nativo de Windows (sin Python): Lumbrera y Atalaya
+   en el mismo instalador Instalar_Lumbrera_ACN.exe, instalación en C:\Lumbrera.
+ - Consola web con pestañas Canciones, Biblia, Lista del culto, Avisos y tiempos, y Ajustes.
+ - Proyector a pantalla completa en la 2ª pantalla, con transición suave y texto auto-ajustado.
+ - Vista de escenario: lámina actual y siguiente, reloj, cronómetro del predicador y mensajes.
+ - Letras para OBS (fondo transparente, franja inferior).
+ - Biblia: Reina-Valera 1909 incluida; importación de Zefania/OpenLP XML, OpenSong, OSIS,
+   MyBible, e-Sword, CSV, JSON y .zip, desde archivo o enlace; búsqueda por referencia y por texto.
+ - Teclas F8 (negro), F9 (limpiar), F10 (logo), flechas para avanzar.
+ - Cuenta regresiva, aviso que corre abajo, cronómetro del predicador.
+ - Fondo con imagen o color, logo, tamaño y color de letra, mayúsculas, referencia visible.
+ - Atalaya: panel de OBS (escenas, transmisión, grabación, audios, fuente de letras con un clic,
+   rutina "Iniciar culto" / "Terminar culto"), reconexión automática.
+ - Claves con bloqueo ante intentos repetidos; registro de errores en archivos .log.

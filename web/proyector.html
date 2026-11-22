@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumbrera · Proyector</title>
+<link rel="icon" href="/static/icono.png">
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none;user-select:none}
+  #escena{position:fixed;inset:0;background:#0b1b2e}
+  #imagen{position:absolute;inset:0;background-size:cover;background-position:center;transition:opacity .6s}
+  #velo{position:absolute;inset:0;background:#000;transition:opacity .4s}
+  .capa{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .45s ease}
+  .caja{position:absolute;left:5vw;right:5vw;top:7vh;bottom:14vh;display:flex;align-items:center;justify-content:center}
+  .texto{white-space:pre-line;line-height:1.22;font-weight:600;max-width:100%;overflow-wrap:break-word}
+  .ref{position:absolute;bottom:5.5vh;transition:bottom .4s;left:0;right:0;text-align:center;font-size:3.1vh;opacity:.85;letter-spacing:.06em;font-weight:500}
+  #logo{opacity:0}
+  #logo img{max-width:46vw;max-height:46vh;object-fit:contain;filter:drop-shadow(0 6px 30px rgba(0,0,0,.45))}
+  #logo .nombre{font-size:6vh;font-weight:700;letter-spacing:.04em;text-align:center;padding:0 6vw}
+  #cuenta{opacity:0}
+  #cuenta .t{font-size:5vh;opacity:.9;margin-bottom:2vh;text-align:center;padding:0 5vw}
+  #cuenta .n{font-size:24vh;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  #aviso{position:absolute;left:0;right:0;bottom:0;height:8.5vh;background:rgba(0,0,0,.72);overflow:hidden;opacity:0;transition:opacity .4s;border-top:3px solid currentColor}
+  #aviso span{position:absolute;white-space:nowrap;top:50%;transform:translateY(-50%);font-size:4.6vh;font-weight:600;padding-left:100vw;animation:correr linear infinite}
+  @keyframes correr{from{transform:translate(0,-50%)}to{transform:translate(-100%,-50%)}}
+  #negro{position:fixed;inset:0;background:#000;opacity:0;transition:opacity .35s;pointer-events:none}
+  #estado{position:fixed;right:6px;bottom:6px;width:7px;height:7px;border-radius:50%;background:#c33;opacity:0;transition:opacity .3s}
+</style>
+</head>
+<body>
+<div id="escena">
+  <div id="imagen"></div>
+  <div id="velo"></div>
+  <div class="capa" id="logo"></div>
+  <div class="capa" id="capaA"><div class="caja"><div class="texto"></div></div><div class="ref"></div></div>
+  <div class="capa" id="capaB" style="opacity:0"><div class="caja"><div class="texto"></div></div><div class="ref"></div></div>
+  <div class="capa" id="cuenta"><div class="t"></div><div class="n"></div></div>
+  <div id="aviso"><span></span></div>
+</div>
+<div id="negro"></div>
+<div id="estado"></div>
+<script src="/static/vivo.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const previa = new URLSearchParams(location.search).has('previa');
+let capaVisible = $('#capaA'), ultimoContenido = '', ultimoEstiloKey = '', ultimoAviso = '';
+
+function aplicarEstilo(e) {
+  const s = e.estilo || {};
+  const key = JSON.stringify(s) + e.iglesia;
+  if (key === ultimoEstiloKey) return;
+  ultimoEstiloKey = key;
+  $('#escena').style.background = s.color_fondo || '#0b1b2e';
+  $('#escena').style.color = s.color_texto || '#fff';
+  $('#escena').style.fontFamily = `"${s.fuente || 'Segoe UI'}", "Segoe UI", Arial, sans-serif`;
+  $('#imagen').style.backgroundImage = s.imagen_fondo ? `url("/fondos/${encodeURIComponent(s.imagen_fondo)}")` : 'none';
+  $('#velo').style.opacity = s.imagen_fondo ? (s.oscurecer || 0) / 100 : 0;
+  document.querySelectorAll('.texto').forEach(t => {
+    t.style.textAlign = s.alineacion || 'center';
+    t.style.textTransform = s.mayusculas ? 'uppercase' : 'none';
+    t.style.textShadow = s.sombra ? '0 3px 12px rgba(0,0,0,.75), 0 1px 3px rgba(0,0,0,.9)' : 'none';
+  });
+  document.querySelectorAll('.ref').forEach(r => { r.style.display = s.mostrar_referencia ? '' : 'none'; r.style.textShadow = s.sombra ? '0 2px 8px rgba(0,0,0,.8)' : 'none'; });
+  $('#logo').innerHTML = s.logo
+    ? `<img src="/fondos/${encodeURIComponent(s.logo)}" alt="">`
+    : `<div class="nombre">${escaparHTML(e.iglesia || '')}</div>`;
+  $('#aviso').style.color = s.color_aviso || '#9bd3ff';
+  ultimoContenido = ''; // forzar re-ajuste
+}
+
+function pintarTexto(e) {
+  const s = e.estilo || {};
+  const l = e.actual || { texto: '', ref: '' };
+  const contenido = l.texto + '|' + l.ref;
+  if (contenido === ultimoContenido) return;
+  ultimoContenido = contenido;
+  const nueva = capaVisible.id === 'capaA' ? $('#capaB') : $('#capaA');
+  const t = nueva.querySelector('.texto');
+  t.textContent = l.texto;
+  nueva.querySelector('.ref').textContent = e.tipo === 'biblia' || e.tipo === 'texto' ? (l.ref || '') : '';
+  const escala = innerHeight / 1080;
+  ajustarTexto(t, nueva.querySelector('.caja'), Math.round((s.tamano_max || 96) * escala), Math.round(22 * escala));
+  nueva.style.opacity = 1;
+  capaVisible.style.opacity = 0;
+  capaVisible = nueva;
+}
+
+function render(e) {
+  aplicarEstilo(e);
+  const mostrarTexto = e.modo === 'texto' && !e.cuenta.activa;
+  pintarTexto(e);
+  $('#capaA').style.visibility = $('#capaB').style.visibility = mostrarTexto ? 'visible' : 'hidden';
+  $('#logo').style.opacity = e.modo === 'logo' && !e.cuenta.activa ? 1 : 0;
+  $('#negro').style.opacity = e.modo === 'negro' ? 1 : 0;
+  // aviso
+  const av = e.aviso_activo ? e.aviso : '';
+  if (av !== ultimoAviso) {
+    ultimoAviso = av;
+    const sp = $('#aviso span');
+    sp.textContent = av;
+    sp.style.animationDuration = Math.max(12, av.length * 0.22) + 's';
+    sp.style.animationName = 'none'; void sp.offsetWidth; sp.style.animationName = '';
+  }
+  $('#aviso').style.opacity = av && e.modo !== 'negro' ? 1 : 0;
+  document.querySelectorAll('.ref').forEach(r => r.style.bottom = av ? '10.5vh' : '5.5vh');
+  $('#cuenta .t').textContent = e.cuenta.texto || '';
+}
+
+function tic() {
+  const e = Vivo.estado;
+  if (e) {
+    const resta = e.cuenta.fin - Vivo.ahora();
+    const activa = e.cuenta.activa && resta > -2000 && e.modo !== 'negro';
+    $('#cuenta').style.opacity = activa ? 1 : 0;
+    if (activa) $('#cuenta .n').textContent = mmss(Math.max(0, resta + 999));
+    if (e.cuenta.activa) {
+      const mostrarTexto = e.modo === 'texto' && !activa;
+      $('#capaA').style.visibility = $('#capaB').style.visibility = mostrarTexto ? 'visible' : 'hidden';
+      $('#logo').style.opacity = e.modo === 'logo' && !activa ? 1 : 0;
+    }
+  }
+  requestAnimationFrame(tic);
+}
+
+Vivo.conectar(render, ok => { $('#estado').style.opacity = ok ? 0 : 0.8; });
+requestAnimationFrame(tic);
+addEventListener('resize', () => { ultimoContenido = ''; Vivo.estado && render(Vivo.estado); });
+if (!previa) {
+  addEventListener('dblclick', () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}));
+  addEventListener('keydown', ev => { if (ev.key === 'F11' || ev.key === 'f') { ev.preventDefault(); document.documentElement.requestFullscreen().catch(() => {}); } });
+} else {
+  document.body.style.cursor = 'default';
+}
+</script>
+</body>
+</html>

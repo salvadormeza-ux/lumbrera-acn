@@ -1,0 +1,56 @@
+LUMBRERA + ATALAYA — Iglesia ACN, Templo Central IFA
+Versión 2.0.0 · Informática DLA SpA
+
+INSTALAR
+ 1. Descargar Instalar_Lumbrera_ACN.exe en el PC del templo y ejecutarlo
+    (Windows puede advertir "editor desconocido": Más información -> Ejecutar de todas formas).
+ 2. Se instala en C:\Lumbrera con accesos directos "Lumbrera" y "Atalaya" en el escritorio.
+    No necesita internet ni instalar Python. Requiere Windows 10/11 con Microsoft Edge (viene con Windows).
+ 3. La primera vez, si Windows pregunta por el Firewall, marcar "Redes privadas" y Permitir
+    (así se puede usar la consola desde el celular).
+ Para actualizar: ejecutar el instalador nuevo encima. Se conservan canciones, Biblias, claves y ajustes.
+
+ACCESOS DIRECTOS
+ Lumbrera ............ abre la consola y pone el proyector a pantalla completa en la 2ª pantalla
+ Atalaya ............. bot de transmisión (OBS): abre su panel
+ Detener Lumbrera .... (menú Inicio > Lumbrera) cierra Lumbrera y Atalaya
+ Desinstalar Lumbrera  (menú Inicio > Lumbrera)
+
+DIRECCIONES (desde este PC: localhost; desde el celular en el Wi-Fi: la IP del PC, se ve en Ajustes)
+ Consola ......... http://localhost:8092/            clave inicial: acn2026
+ Proyector ....... http://localhost:8092/proyector
+ Escenario ....... http://localhost:8092/escenario   (músicos / predicador)
+ Letras para OBS . http://localhost:8092/obs         (Fuente de navegador 1920x1080, fondo transparente)
+ Panel Atalaya ... http://localhost:8080/            clave inicial: acn2026
+
+PRIMEROS PASOS
+ 1. Proyector conectado en modo "Extender" (tecla Windows + P).
+ 2. Abrir "Lumbrera". Pestaña Biblia -> "Importar Biblia" para cargar la RVR1960
+    (archivo o enlace: Zefania/OpenLP XML, OpenSong, OSIS, MyBible, e-Sword, CSV o .zip).
+    Viene incluida la Reina-Valera 1909 (dominio público).
+ 3. Canciones: "+ Nueva" o "Importar .txt" (una canción por archivo; línea en blanco = nueva lámina;
+    opcional: primeras líneas "Título:", "Autor:", "Tono:"; etiquetas como [Coro] o [Estrofa 2]).
+ 4. Cambiar la clave en Ajustes (consola) o en C:\Lumbrera\lumbrera\config.json
+    y C:\Lumbrera\atalaya\config.json.
+
+TECLAS EN LA CONSOLA
+ Flecha derecha / abajo / Espacio ... lámina o versículo siguiente
+ Flecha izquierda / arriba .......... anterior
+ F8 ... pantalla negra    F9 ... limpiar (solo fondo)    F10 ... logo de la iglesia
+ Esc .. volver a mostrar el texto
+
+ATALAYA (opcional, transmisión)
+ En OBS: Herramientas -> Ajustes del servidor WebSocket -> habilitar, copiar contraseña
+ y pegarla en C:\Lumbrera\atalaya\config.json ("obs" -> "password"). Luego abrir "Atalaya".
+ Desde el panel: cambiar escenas, iniciar/detener transmisión y grabación, silenciar audios,
+ agregar las letras de Lumbrera a OBS con un clic, y botones "Iniciar culto" / "Terminar culto".
+
+PRUEBA SUGERIDA
+ - Proyectar una alabanza, avanzar con flechas, probar F8/F9/F10.
+ - Buscar "Juan 3:16" y avanzar versículo por versículo.
+ - Cuenta regresiva "5", aviso que corre abajo, cronómetro del predicador (ver /escenario).
+ - Abrir la consola desde el celular (http://IP-DEL-PC:8092).
+ - En paralelo con Holyrics: no cerrar Holyrics hasta confirmar que todo anda bien.
+
+REGISTRO DE ERRORES: C:\Lumbrera\lumbrera\lumbrera.log y C:\Lumbrera\atalaya\atalaya.log
+Soporte: Informática DLA SpA · informaticadla.cl

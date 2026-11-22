@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atalaya · Transmisión</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/icono.png">
+<style>
+  .contenido{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:14px}
+  .escenas{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+  .escenas .btn{padding:16px 10px;font-size:14px;white-space:normal}
+  .escenas .btn.actual{background:var(--vivo);border-color:var(--vivo);color:#fff;font-weight:700}
+  .grande{font-size:16px;padding:14px 18px}
+  .estadoTx{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700}
+  .bitacora{font-family:Consolas,monospace;font-size:12px;color:var(--suave);max-height:180px;overflow:auto;white-space:pre-line}
+  .audio{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--borde);border-radius:8px;cursor:pointer}
+  .audio.mute{opacity:.6;border-color:#7a2e3a}
+  .audios{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+  .vivoTx{color:var(--vivo)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="barra">
+    <div class="marca"><div class="icono">📡</div><div><b>Atalaya</b><span class="suave pequeno">Transmisión · Iglesia ACN</span></div></div>
+    <div class="crece"></div>
+    <span class="pill" id="pObs"><span class="punto"></span>OBS</span>
+    <span class="pill" id="pLum"><span class="punto"></span>Lumbrera</span>
+  </div>
+  <div style="overflow:auto">
+  <div class="contenido">
+    <div id="sinObs" class="tarjeta oculto" style="border-color:var(--aviso)">
+      <h2>⚠️ Sin conexión con OBS</h2>
+      <div class="ayuda" id="errObs"></div>
+      <p class="ayuda">1) Abra OBS Studio. 2) Herramientas → Ajustes del servidor WebSocket → marque <b>Habilitar</b>, pulse <b>Mostrar información de conexión</b> y copie la contraseña.
+      3) Péguela en <code>C:\Lumbrera\atalaya\config.json</code> en <code>"password"</code> y vuelva a abrir Atalaya. Atalaya reintenta solo cada 5 segundos.</p>
+    </div>
+
+    <div class="rejilla2">
+      <div class="tarjeta">
+        <h2>🔴 Transmisión</h2>
+        <div class="fila"><span class="estadoTx crece" id="txTiempo">00:00:00</span><span class="pill" id="txEstado">Detenida</span></div>
+        <div class="suave pequeno" id="txSalud" style="margin:6px 0 10px"></div>
+        <div class="fila"><button class="btn pri grande crece" id="txBoton">Iniciar transmisión</button></div>
+      </div>
+      <div class="tarjeta">
+        <h2>⏺️ Grabación</h2>
+        <div class="fila"><span class="estadoTx crece" id="grTiempo">00:00:00</span><span class="pill" id="grEstado">Detenida</span></div>
+        <div style="height:28px"></div>
+        <div class="fila"><button class="btn grande crece" id="grBoton">Iniciar grabación</button></div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="fila"><h2 class="crece" style="margin:0">⛪ Rutina del culto</h2></div>
+      <div class="fila" style="margin-top:8px">
+        <div class="crece"><label>Escena al iniciar</label><select id="rIni"></select></div>
+        <div class="crece"><label>Escena al terminar</label><select id="rFin"></select></div>
+        <label style="margin:22px 0 0"><input type="checkbox" id="rGrabar"> También grabar</label>
+      </div>
+      <div class="fila" style="margin-top:12px">
+        <button class="btn" id="rGuardar">Guardar rutina</button>
+        <div class="crece"></div>
+        <button class="btn pri grande" id="cultoIni">▶ Iniciar culto</button>
+        <button class="btn peligro grande" id="cultoFin">■ Terminar culto</button>
+      </div>
+      <p class="ayuda">«Iniciar culto» cambia a la escena elegida, empieza a grabar (si está marcado) y comienza la transmisión. «Terminar culto» muestra la escena final unos segundos y detiene todo.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>🎬 Escenas</h2>
+      <div class="escenas" id="escenas"></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>🎙️ Audio</h2>
+      <div class="audios" id="audios"></div>
+      <p class="ayuda">Toque un audio para silenciarlo o activarlo.</p>
+    </div>
+
+    <div class="rejilla2">
+      <div class="tarjeta">
+        <h2>📖 Letras de Lumbrera en OBS</h2>
+        <p class="ayuda">Agrega a la escena actual una fuente de navegador «Letras Lumbrera» (1920×1080, fondo transparente) con las letras y versículos que se proyectan.</p>
+        <button class="btn" id="fuente">Agregar a la escena actual</button>
+        <p class="ayuda" id="urlObs"></p>
+      </div>
+      <div class="tarjeta">
+        <h2>📜 Bitácora</h2>
+        <div class="bitacora" id="bitacora"></div>
+      </div>
+    </div>
+    <p class="firma">Atalaya <span id="ver"></span> · Informática DLA SpA</p>
+  </div>
+  </div>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+function toast(msg, error) {
+  let t = $('.toast'); if (!t) { t = document.createElement('div'); document.body.appendChild(t); }
+  t.className = 'toast' + (error ? ' error' : ''); t.textContent = msg;
+  clearTimeout(window._tt); window._tt = setTimeout(() => t.remove(), error ? 6000 : 2500);
+}
+async function post(u, b) {
+  const r = await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b || {}) });
+  if (r.status === 401) { location.reload(); return; }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'Error');
+  return j;
+}
+const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let E = null, rutinaCargada = false;
+async function act(u, b, ok) { try { await post(u, b); ok && toast(ok); setTimeout(cargar, 300); } catch (e) { toast(e.message, true); } }
+
+function pintar(d) {
+  const o = d.obs; E = o;
+  $('#ver').textContent = 'v' + d.version;
+  $('#pObs .punto').className = 'punto ' + (o.conectado ? 'ok' : 'mal');
+  $('#pLum .punto').className = 'punto ' + (o.lumbrera_ok ? 'ok' : 'mal');
+  $('#sinObs').classList.toggle('oculto', o.conectado);
+  $('#errObs').textContent = o.error || '';
+  $('#urlObs').innerHTML = 'Dirección: <code>' + esc(d.lumbrera_url) + '/obs</code>';
+  $('#txTiempo').textContent = o.transmitiendo ? o.tiempo_transmision : '00:00:00';
+  $('#txEstado').textContent = o.transmitiendo ? '● EN VIVO' : 'Detenida';
+  $('#txEstado').className = 'pill' + (o.transmitiendo ? ' vivoTx' : '');
+  $('#txSalud').textContent = o.transmitiendo ? `Congestión ${(o.congestion * 100).toFixed(0)}% · cuadros perdidos ${o.frames_perdidos}` : '';
+  $('#txBoton').textContent = o.transmitiendo ? 'Detener transmisión' : 'Iniciar transmisión';
+  $('#txBoton').className = 'btn grande crece ' + (o.transmitiendo ? 'peligro' : 'pri');
+  $('#grTiempo').textContent = o.grabando ? o.tiempo_grabacion : '00:00:00';
+  $('#grEstado').textContent = o.grabando ? '● Grabando' : 'Detenida';
+  $('#grEstado').className = 'pill' + (o.grabando ? ' vivoTx' : '');
+  $('#grBoton').textContent = o.grabando ? 'Detener grabación' : 'Iniciar grabación';
+  const escenas = o.escenas || [];
+  $('#escenas').innerHTML = escenas.length ? escenas.map(s => `<button class="btn ${s === o.escena_actual ? 'actual' : ''}" data-esc="${esc(s)}">${esc(s)}</button>`).join('') : '<span class="suave">—</span>';
+  document.querySelectorAll('[data-esc]').forEach(b => b.onclick = () => act('/api/escena', { nombre: b.dataset.esc }));
+  $('#audios').innerHTML = (o.audios || []).map(a => `<div class="audio ${a.silencio ? 'mute' : ''}" data-au="${esc(a.nombre)}">${a.silencio ? '🔇' : '🔊'} <span class="crece">${esc(a.nombre)}</span><span class="pequeno">${a.silencio ? 'silenciado' : 'activo'}</span></div>`).join('') || '<span class="suave">—</span>';
+  document.querySelectorAll('[data-au]').forEach(b => b.onclick = () => act('/api/silencio', { nombre: b.dataset.au }));
+  $('#bitacora').textContent = (o.bitacora || []).join('\n');
+  const op = '<option value="">— No cambiar —</option>' + escenas.map(s => `<option>${esc(s)}</option>`).join('');
+  if (!rutinaCargada || $('#rIni').options.length !== escenas.length + 1) {
+    $('#rIni').innerHTML = op; $('#rFin').innerHTML = op;
+    $('#rIni').value = o.rutina.escena_inicio || ''; $('#rFin').value = o.rutina.escena_fin || '';
+    $('#rGrabar').checked = o.rutina.grabar;
+    rutinaCargada = true;
+  }
+}
+async function cargar() {
+  try {
+    const r = await fetch('/api/estado');
+    if (r.status === 401) { location.reload(); return; }
+    pintar(await r.json());
+  } catch (e) { $('#pObs .punto').className = 'punto mal'; }
+}
+$('#txBoton').onclick = () => {
+  if (E && E.transmitiendo) { if (confirm('¿Detener la transmisión en vivo?')) act('/api/transmision', { accion: 'detener' }); }
+  else act('/api/transmision', { accion: 'iniciar' }, 'Iniciando transmisión…');
+};
+$('#grBoton').onclick = () => act('/api/grabacion', { accion: E && E.grabando ? 'detener' : 'iniciar' });
+$('#fuente').onclick = () => act('/api/fuente-lumbrera', {}, 'Fuente agregada');
+$('#rGuardar').onclick = () => act('/api/rutina', { escena_inicio: $('#rIni').value, escena_fin: $('#rFin').value, grabar: $('#rGrabar').checked }, 'Rutina guardada');
+$('#cultoIni').onclick = () => { if (confirm('¿Iniciar el culto? Se comenzará a transmitir en vivo.')) act('/api/culto', { accion: 'iniciar' }, 'Culto iniciado'); };
+$('#cultoFin').onclick = () => { if (confirm('¿Terminar el culto y detener la transmisión?')) act('/api/culto', { accion: 'terminar' }, 'Culto terminado'); };
+cargar(); setInterval(cargar, 1500);
+</script>
+</body>
+</html>

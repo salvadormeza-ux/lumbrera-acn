@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lumbrera · OBS</title>
+<style>
+  html,body{margin:0;height:100%;background:transparent;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif}
+  #franja{position:absolute;left:4%;right:4%;bottom:5%;padding:22px 40px;border-radius:14px;color:#fff;text-align:center;
+    opacity:0;transform:translateY(16px);transition:opacity .35s,transform .35s}
+  #franja.con{background:linear-gradient(180deg,rgba(8,22,40,.86),rgba(8,22,40,.93));box-shadow:0 8px 30px rgba(0,0,0,.35);border-top:3px solid #5cc2ff}
+  #franja.ver{opacity:1;transform:none}
+  #texto{white-space:pre-line;font-weight:600;line-height:1.25;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+  #ref{margin-top:8px;font-size:26px;color:#9bd3ff;letter-spacing:.05em}
+</style>
+</head>
+<body>
+<div id="franja"><div id="texto"></div><div id="ref"></div></div>
+<script src="/static/vivo.js"></script>
+<script>
+const f = document.getElementById('franja');
+let ult = '';
+Vivo.conectar(e => {
+  const s = e.estilo || {};
+  const l = e.actual || { texto: '' };
+  const ver = e.modo === 'texto' && l.texto && !(e.cuenta.activa && e.cuenta.fin > Vivo.ahora());
+  f.className = (s.obs_franja ? 'con ' : '') + (ver ? 'ver' : '');
+  const k = l.texto + l.ref + JSON.stringify(s);
+  if (k === ult) return;
+  ult = k;
+  const t = document.getElementById('texto');
+  t.textContent = l.texto;
+  t.style.fontSize = (s.obs_tamano || 54) * innerHeight / 1080 + 'px';
+  t.style.textTransform = s.mayusculas ? 'uppercase' : 'none';
+  t.style.fontFamily = `"${s.fuente || 'Segoe UI'}", "Segoe UI", Arial, sans-serif`;
+  document.getElementById('ref').textContent = (e.tipo === 'biblia' && s.mostrar_referencia) ? l.ref : '';
+});
+</script>
+</body>
+</html>

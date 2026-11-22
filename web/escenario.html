@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumbrera · Escenario</title>
+<link rel="icon" href="/static/icono.png">
+<style>
+  html,body{margin:0;height:100%;background:#05080d;color:#fff;font-family:"Segoe UI",system-ui,Arial,sans-serif;overflow:hidden}
+  .grid{display:grid;grid-template-rows:auto 1fr auto;height:100%}
+  header{display:flex;justify-content:space-between;align-items:center;padding:1.2vh 2vw;background:#0d1622;border-bottom:1px solid #1c2c40;font-size:3vh}
+  .reloj{font-variant-numeric:tabular-nums;font-weight:700}
+  .crono{font-variant-numeric:tabular-nums;font-weight:700;padding:.3vh 1.2vw;border-radius:8px;background:#13263b}
+  .crono.cerca{background:#6b5310}
+  .crono.pasado{background:#8a1c28;animation:latir 1s infinite}
+  @keyframes latir{50%{opacity:.6}}
+  main{display:grid;grid-template-rows:1fr auto;min-height:0}
+  .actual{position:relative;margin:2vh 3vw}
+  .actual .caja{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .actual .texto{white-space:pre-line;text-align:center;font-weight:700;line-height:1.2;color:#ffe9a8}
+  .etq{position:absolute;top:0;left:0;font-size:2.2vh;color:#7fa7cf;text-transform:uppercase;letter-spacing:.12em}
+  .sig{border-top:1px solid #1c2c40;padding:1.6vh 3vw;color:#8ea6be;font-size:3.6vh;white-space:pre-line;max-height:24vh;overflow:hidden;line-height:1.25}
+  .sig b{display:block;font-size:2vh;letter-spacing:.12em;color:#56718d;margin-bottom:.6vh}
+  .msg{background:#c0392b;color:#fff;font-size:5vh;font-weight:700;text-align:center;padding:1.4vh 2vw;animation:latir 1.2s infinite}
+  .modo{font-size:2.2vh;padding:.3vh 1vw;border-radius:6px;background:#1d2f45;color:#9fc2e6}
+  .cuenta{color:#9bd3ff}
+</style>
+</head>
+<body>
+<div class="grid">
+  <header>
+    <span class="reloj" id="reloj">--:--</span>
+    <span><span class="modo" id="modo"></span> <span class="cuenta" id="cuenta"></span></span>
+    <span class="crono" id="crono" title="Cronómetro del predicador">00:00</span>
+  </header>
+  <main>
+    <div class="actual"><div class="etq" id="ref"></div><div class="caja" id="caja"><div class="texto" id="texto"></div></div></div>
+    <div class="sig" id="sig"></div>
+  </main>
+  <div class="msg" id="msg" style="display:none"></div>
+</div>
+<script src="/static/vivo.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+let ult = '';
+function render(e) {
+  const l = e.actual || { texto: '' };
+  const k = l.texto + innerWidth + innerHeight;
+  if (k !== ult) {
+    ult = k;
+    $('#texto').textContent = l.texto;
+    ajustarTexto($('#texto'), $('#caja'), Math.round(innerHeight * 0.11), 16);
+  }
+  $('#ref').textContent = [l.etiqueta, l.ref].filter(Boolean).join(' · ');
+  const s = e.siguiente;
+  $('#sig').innerHTML = s && s.texto ? '<b>SIGUIENTE' + (s.etiqueta ? ' · ' + escaparHTML(s.etiqueta) : '') + '</b>' + escaparHTML(s.texto) : '';
+  $('#modo').textContent = { texto: 'EN PANTALLA', negro: 'PANTALLA NEGRA', limpio: 'SOLO FONDO', logo: 'LOGO' }[e.modo] || '';
+  $('#msg').style.display = e.mensaje_escenario ? '' : 'none';
+  $('#msg').textContent = e.mensaje_escenario;
+}
+function tic() {
+  const d = new Date(Vivo.ahora());
+  $('#reloj').textContent = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  const e = Vivo.estado;
+  if (e) {
+    const ms = cronoMs(e.crono), lim = (e.crono.limite_min || 0) * 60000;
+    const c = $('#crono');
+    c.textContent = mmss(ms) + (lim ? ' / ' + mmss(lim) : '');
+    c.className = 'crono' + (lim && ms > lim ? ' pasado' : lim && ms > lim - 5 * 60000 ? ' cerca' : '');
+    const r = e.cuenta.fin - Vivo.ahora();
+    $('#cuenta').textContent = e.cuenta.activa && r > 0 ? '⏳ ' + mmss(r + 999) : '';
+  }
+  setTimeout(tic, 250);
+}
+Vivo.conectar(render);
+tic();
+addEventListener('resize', () => { ult = ''; Vivo.estado && render(Vivo.estado); });
+</script>
+</body>
+</html>

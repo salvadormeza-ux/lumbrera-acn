@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ingresar</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/icono.png">
+</head>
+<body>
+<div class="ingreso">
+  <form class="tarjeta" id="f">
+    <div class="marca">
+      <div class="icono" id="ico">🕯️</div>
+      <div><b id="app">Lumbrera</b><span class="suave pequeno" id="sub">Proyección · Iglesia ACN</span></div>
+    </div>
+    <label for="clave">Clave</label>
+    <input type="password" id="clave" autocomplete="current-password" autofocus required>
+    <div id="err" class="pequeno" style="color:#ff9aa5;min-height:20px;margin-top:8px"></div>
+    <button class="btn pri" style="width:100%;margin-top:4px">Entrar</button>
+    <p class="firma" style="margin:18px 0 0;text-align:center">Informática DLA SpA · <span id="ver"></span></p>
+  </form>
+</div>
+<script>
+fetch('/api/ping').then(r=>r.json()).then(p=>{
+  document.getElementById('ver').textContent='v'+p.version;
+  if(p.app==='atalaya'){
+    document.title='Atalaya · Ingresar';
+    document.getElementById('app').textContent='Atalaya';
+    document.getElementById('sub').textContent='Transmisión (OBS) · Iglesia ACN';
+    document.getElementById('ico').textContent='📡';
+  } else document.title='Lumbrera · Ingresar';
+});
+document.getElementById('f').onsubmit=async e=>{
+  e.preventDefault();
+  const err=document.getElementById('err'); err.textContent='';
+  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clave:document.getElementById('clave').value})});
+  if(r.ok){location.reload();return}
+  const j=await r.json().catch(()=>({}));
+  err.textContent=j.error||'No se pudo ingresar';
+};
+</script>
+</body>
+</html>
